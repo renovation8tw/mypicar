@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Administration</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="  crossorigin="anonymous"/> -->
+    <link rel="stylesheet" href="../static/css/controller.css" >
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Smart Vehicle</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="/">搖桿操控</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/avoid">自動避障</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link " href="/navigate">自走導航</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/confpage">車輛設定</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/model">影像分類</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link active" href="/admin">影像管理</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="panel_body" >
+      <div class="panel_container">
+        <div class="mt-5 panel_header ">影像管理</div>
+        <div class="mt-2 panel_info "></div>
+        <div class="d-flex flex-row justify-content-center align-items-center">
+          <div class="monitor ">
+            <table>
+              <!-- *****  For test purpose ...***** -->
+              <thead>
+                <tr><th>Class</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><i class="far fa-folder"></i>Class1</td></tr>
+                <tr><td><i class="far fa-folder"></i>Class2</td></tr>
+                <tr><td><i class="far fa-folder"></i>Class3</td></tr>
+                <tr><td><i class="far fa-folder"></i>Class4</td></tr>
+                <tr><td><i class="far fa-folder"></i>Class5</td></tr>
+                <tr><td><i class="far fa-folder"></i>Class6</td></tr>
+              </tbody>
+              <!-- *****  For test purpose ...***** -->
+            </table>
+            <img>
+          </div>  
+        </div>
+        <div class="wheel position-relative d-flex flex-row justify-content-center align-items-center">
+          <div class="circle ok-outer position-absolute"></div>
+          <div class="circle ok-inner position-absolute">
+            <i class="fas fa-trash control-icon" id='trash_can' ontouchend="confirmDelete()"></i>
+          </div>
+          <i class="fas fa-caret-right position-absolute control-icon right" onclick="queryLower()" ontouchend="queryLower()"></i>
+          <i class="fas fa-caret-right position-absolute control-icon bottom" onclick="down()" ontouchend="down()"></i>
+          <i class="fas fa-caret-right position-absolute control-icon left" onclick="queryUpper()" ontouchend="queryUpper()"></i>
+          <i class="fas fa-caret-right position-absolute control-icon top" onclick="up()" ontouchend="up()"></i>
+        </div>
+      </div>
+    </div>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="../static/js/all.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+    <script>
+      const xhttp = new XMLHttpRequest();
+      const controlIcons = Array.from(document.getElementsByClassName("control-icon"));
+      const trash_can = document.querySelector('#trash_can');
+      let queryBy = 1;    // 1-by class; 2-by image; 3-show image
+      let qClass = '', qImage = '';
+      window.onload = ()=>{
+        queryUpper();
+        // *****  For test purpose ..*****
+        // $("tbody tr").first().addClass("orange");
+        // if (!($("i.top").hasClass("noDisplay"))){
+        //   $("i.top").toggleClass("noDisplay");
+        // }
+        // *****  For test purpose ..*****
+      }
+      
+      xhttp.onload = ()=>{
+        if (xhttp.status == 200) {
+          let aryResponse = JSON.parse(xhttp.responseText);
+          if (aryResponse[0]=='showImg'){
+            $("img").attr("src",aryResponse[1]);
+            $(".panel_info").html(aryResponse[2]);
+            if (!($("i.top").hasClass("noDisplay"))) {
+              $("i.top").toggleClass("noDisplay");      // hide top arrow
+            }
+            if (!($("i.bottom").hasClass("noDisplay"))){
+              $("i.bottom").toggleClass("noDisplay");   // hide bottom arrow 
+            }
+          }else if(aryResponse[0]=='imgDeleted'){
+            $(".panel_info").html(aryResponse[1]);
+          }else{
+            $("thead").html(aryResponse[0]);
+            $("tbody").html(aryResponse[1]);
+            $(".panel_info").html(aryResponse[2]);
+            $("tbody tr").first().addClass("orange");     // by default, the first row is orange  
+            if (!($("i.top").hasClass("noDisplay"))) {
+              $("i.top").toggleClass("noDisplay");      // hide top arrow
+            }
+            if ($("i.bottom").hasClass("noDisplay")){
+              $("i.bottom").toggleClass("noDisplay");   // show bottom arrow 
+            }
+          }
+        }
+      };
+
+      function queryUpper(){
+        let route = "";
+        if ($("table").hasClass("noDisplay")){
+          $("table").toggleClass("noDisplay");      // show table
+        }
+        if ($("img").attr("src")!=""){
+          $("img").attr("src","");      // set image: <img src="">
+        }
+
+        if (queryBy>1){
+          queryBy--;
+        }
+        if (queryBy==2){
+          route = `/query?q=${queryBy}&c=${qClass}`;
+          $("i.right").toggleClass("noDisplay");      // show right arrow
+          // $("#trash_can").toggleClass("noDisplay");   // show trash can
+        }
+        if (queryBy==1){                        // If query by class..
+          route = `/query?q=${queryBy}`;
+          $("i.left").toggleClass("noDisplay");     // hide left arrow
+        }
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      function queryLower(){
+        let route = '';
+        if (queryBy<3){
+          queryBy++;
+        }
+        if (queryBy==2){
+          qClass = $("tbody").find(".orange").children("td").first().text();
+          route = `/query?q=${queryBy}&c=${qClass}` ;
+          $("i.left").toggleClass("noDisplay");       // sohw left arrow
+        } else if (queryBy==3){
+          qImage = $("tbody").find(".orange").children("td").first().text();
+          qClass = $("tbody").find(".orange").children("td").eq(1).text();
+          route = `/query?q=${queryBy}&c=${qClass}&i=${qImage}`;
+          $("table").toggleClass("noDisplay");        // hide table
+          $("i.right").toggleClass("noDisplay");      // hide right arrow
+          // $("#trash_can").toggleClass("noDisplay");   // hide trash can
+        }
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      function confirmDelete(){
+        if (queryBy==1){
+          cmfMessage = "你確定要刪除此分類及其所有檔案 ?";
+        }else if (queryBy==2){
+          cmfMessage = "你確定要刪除此檔案 ?";
+        }else if (queryBy==3){
+          cmfMessage = "你確定要刪除此檔案 ?";
+        }
+        if (confirm(cmfMessage)){
+          handleDelete();
+        }
+      }
+
+      function handleDelete(){
+        let delClass, delImage, delString ;
+        
+        if (queryBy==1){
+          delClass = $("tbody").find(".orange").children("td").first().text();  
+          delString = `queryby=${queryBy}&delclass=${delClass}` ;
+        }else {
+          delImage = $("tbody").find(".orange").children("td").first().text(); 
+          delClass = $("tbody").find(".orange").children("td").eq(1).text();
+          delString = `queryby=${queryBy}&delclass=${delClass}&delimage=${delImage}` ;
+        }
+        
+        xhttp.open('POST','/delete',true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send(delString);
+
+        if (queryBy==3){
+          $("img").attr("src","");      // hide <img>
+          // $("table").toggleClass("noDisplay");    // show table
+          // queryUpper();
+        }
+      }
+
+      function down(){
+        let orangeRow = $("tbody").find(".orange");
+        orangeRow.toggleClass("orange").next("tr").toggleClass("orange");
+        if ($("tbody tr").last().hasClass("orange")){
+          $("i.bottom").toggleClass("noDisplay");     // if last row reached, hide bottom arrow  
+        }
+        if ($("i.top").hasClass("noDisplay")){
+          $("i.top").toggleClass("noDisplay");        // if top arrow no diaplay, show it
+        }
+      }    
+            
+
+      function up(){
+        let orangeRow = $("tbody").find(".orange");
+        orangeRow.toggleClass("orange").prev("tr").toggleClass("orange");
+        if ($("tbody tr").first().hasClass("orange")){
+          $("i.top").toggleClass("noDisplay");     // if first row reached, hide bottom arrow  
+        }
+        if ($("i.bottom").hasClass("noDisplay")){
+          $("i.bottom").toggleClass("noDisplay");        // if bottom arrow no diaplay, show it
+        }  
+      }
+
+      $("tbody").on("click","tr",function(){
+        $("tbody").find("tr.orange").toggleClass("orange");
+        $(this).toggleClass("orange");
+      });
+
+      $("tbody").on("click","tr:last",function(){
+        if (!($("i.bottom").hasClass("noDisplay"))) {
+          $("i.bottom").toggleClass("noDisplay");
+        }
+      });
+      
+      $("tbody").on("click","tr:not(:last)",function(){
+        if ($("i.bottom").hasClass("noDisplay")){
+          $("i.bottom").toggleClass("noDisplay");
+        }
+      })
+      
+      $("tbody").on("click","tr:first",function(){
+        if (!($("i.top").hasClass("noDisplay"))) {
+          $("i.top").toggleClass("noDisplay");
+        }
+      })
+      
+      $("tbody").on("click","tr:not(:first)",function(){
+        if ($("i.top").hasClass("noDisplay")){
+          $("i.top").toggleClass("noDisplay");
+        }
+      })
+
+      controlIcons.forEach(element => {
+        element.addEventListener("mousedown",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("mouseup",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+        });
+        element.addEventListener("touchstart",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("touchend",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+        });
+      });  
+
+      
+      $("#trash_can").on("click",()=>{
+        confirmDelete();
+      })
+      
+
+    </script>
+</body>
+</html>

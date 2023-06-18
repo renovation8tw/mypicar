@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto navigation</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="  crossorigin="anonymous"/> -->
+    <link rel="stylesheet" href="../static/css/controller.css" >
+    
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Smart Vehicle</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="/">搖桿操控</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/avoid">自動避障</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link active" href="/navigate">自走導航</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/confpage">車輛設定</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link " href="/model">影像分類</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/admin">影像管理</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="panel_body" >
+      <div class="panel_container">
+        <div class="mt-5 panel_header ">自走導航</div>
+        <div class="mt-2 panel_info "></div>
+        <div class="d-flex flex-row justify-content-center align-items-center">
+          <div class="monitor ">
+            <img id="picam" src="{{ url_for('video_feed') }}">
+            <!-- <img id="picam" src=""> -->
+          </div>  
+        </div>
+        <div class="wheel position-relative d-flex flex-row justify-content-center align-items-center">
+          <div class="circle ok-outer position-absolute"></div>
+          <div class="circle ok-inner position-absolute">
+            <b id="setGuide" style="color: rgb(46,46,46);cursor: pointer;">ON</b>
+          </div>
+          <i class="fas fa-caret-right position-absolute control-icon right" ontouchstart="handlePath('/path?go=right')" onmousedown="handlePath('/path?go=right')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon bottom" ontouchstart="handlePath('/path?go=back')" onmousedown="handlePath('/path?go=back')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon left" ontouchstart="handlePath('/path?go=left')" onmousedown="handlePath('/path?go=left')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon top" ontouchstart="handlePath('/path?go=forward')" onmousedown="handlePath('/path?go=forward')"></i>
+        </div>
+      </div>
+    </div>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="../static/js/all.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+    <script src="../static/js/tf.min.js"></script>
+    <script src="../static/js/teachablemachine-image.min.js" ></script>
+    <script>
+      let xhttp = new XMLHttpRequest();
+      
+      const URL = "../static/my_model/";
+      let model, maxPredictions, classInference ;
+      let guideStatus = false;
+      let picam = document.getElementById("picam");
+
+      $(function(){
+        init();
+      });
+      
+      async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+            // console.log(maxPredictions);
+      }
+
+      function handlePath(route){
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+      
+      async function handleAuto(){
+        let route = "" ; 
+        while (guideStatus){
+          route = '/auto?class=';
+          classInference = await predictClass();
+          route += classInference; 
+          // $(".panel_info").text(route);
+          xhttp.open('GET',route,true);
+          xhttp.send();
+        } 
+        
+        route = '/auto?class=stop';
+        // $(".panel_info").text(route);
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      async function predictClass(elmImg){
+        let classPrediction, probPrediction;
+        let classMap = new Map(); 
+        let maxClass = '';
+        let maxProb = 0;
+        // predict can take in an image, video or canvas html element
+        // console.log("<img src=?> is:"+picam.src);
+        const predictions = await model.predict(picam);
+        
+        for (let i = 0; i < maxPredictions; i++){
+          classPrediction = predictions[i].className ;
+          probPrediction = predictions[i].probability.toFixed(2);
+          // console.log(classPrediction+':'+probPrediction);
+          classMap.set(classPrediction,probPrediction);
+        }
+        classMap.forEach((v,k)=>{
+          if (v > maxProb) { 
+            maxProb = v;
+            maxClass = k;
+          }
+        });
+        console.log(`Inference:${maxClass}`);
+        return maxClass;
+      }
+
+      xhttp.onload = ()=>{
+        if (xhttp.status == 200) {
+          document.querySelector('.panel_info').textContent = xhttp.responseText;
+      }};
+
+      
+      let setGuide = document.getElementById("setGuide");
+      // console.log(setAvoid.textContent);
+      const controlIcons = Array.from(document.getElementsByClassName("control-icon"));
+      // console.log(controlIcons);
+      setGuide.addEventListener("click",(e)=>{
+        if (!guideStatus){
+          setGuide.textContent = "OFF";
+          setGuide.style.color = "rgb(255,0,0)"
+          controlIcons.forEach(element => {
+            element.style.display = "none"
+          })
+        }else{
+          setGuide.textContent = "ON";
+          setGuide.style.color = "rgb(46,46,46)"
+          controlIcons.forEach(element => {
+            element.style.display = "inline"
+          })
+        }
+        
+        guideStatus = (!guideStatus);
+        if (guideStatus){
+          handleAuto(); 
+        }
+
+        // ***** Test : Change <img> source image every 5s, and then call handleAuto() 1s after change image. *****
+        // let repeatImg
+        // if (guideStatus){
+        //     let i = 1;
+        //     repeatImg = setInterval(() => {
+        //       if (i>9){
+        //         clearInterval(repeatImg);
+        //       } else {
+        //         let imgPath = `../static/imgClass/TEST/${i}.png`;
+        //         // console.log(imgPath);
+        //         picam.src = imgPath; 
+        //         console.log(picam.src);
+        //         setTimeout(()=>{
+        //           handleAuto();
+        //           i++;
+        //         },1000) ;
+        //       }
+        //     }, 5000);
+        // }else{
+        //   clearInterval(repeatImg);
+        //   handleAuto();
+        // }
+        // ***** Test *****
+
+      });
+      
+      controlIcons.forEach(element => {
+        element.addEventListener("mousedown",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("mouseup",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+          handlePath('/path?go=stop');
+        });
+        element.addEventListener("touchstart",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("touchend",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+          handlePath('/path?go=stop');
+        });
+      });  
+
+      
+    </script>
+</body>
+</html>

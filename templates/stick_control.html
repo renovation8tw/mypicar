@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stick Controller</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="  crossorigin="anonymous"/> -->
+    <link rel="stylesheet" href="../static/css/controller.css" >
+    
+    
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Smart Vehicle</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="/">搖桿操控</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/avoid">自動避障</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link " href="/navigate">自走導航</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/confpage">車輛設定</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/model">影像分類</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/admin">影像管理</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="panel_body" >
+      <div class="panel_container">
+        <div class="mt-5 panel_header ">搖桿操控</div>
+        <div class="mt-2 panel_info "></div>
+        <div class="d-flex flex-row justify-content-center align-items-center">
+          <div class="monitor" id="status">
+            <img src="{{ url_for('video_feed') }}">
+          </div>  
+        </div>
+        <div class="wheel position-relative d-flex flex-row justify-content-center align-items-center">
+          <div style="border: 1px solid #ceeefa; width: 150px; height: 150px;" class="position-absolute">
+            <img src="../static/image/joystick-base.png" width="150" height="150"/>
+            <div id="stick" style="position: absolute; left:43px; top:43px;">
+              <img src="../static/image/joystick-green.png" style="cursor: pointer;"/>		
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="../static/js/all.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+    <script>
+
+      class JoystickController  {
+        // stickID: ID of HTML element (representing joystick) that will be dragged
+        // maxDistance: maximum amount joystick can move in any direction
+        // deadzone: joystick must move at least this amount from origin to register value change
+        constructor( stickID, maxDistance, deadzone )
+        {
+          this.id = stickID;
+          let stick = document.getElementById(stickID);
+      
+          // location from which drag begins, used to calculate offsets
+          this.dragStart = null;
+      
+          // track touch identifier in case multiple joysticks present
+          this.touchId = null;
+          
+          this.active = false;
+          this.value = { x: 0, y: 0 }; 
+      
+          let self = this;
+      
+          function handleDown(event)
+          {
+              self.active = true;
+      
+            // all drag movements are instantaneous
+            stick.style.transition = '0s';
+      
+            // touch event fired before mouse event; prevent redundant mouse event from firing
+            event.preventDefault();
+      
+              if (event.changedTouches)
+                self.dragStart = { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+              else
+                self.dragStart = { x: event.clientX, y: event.clientY };
+      
+            // if this is a touch event, keep track of which one
+              if (event.changedTouches)
+                self.touchId = event.changedTouches[0].identifier;
+          }
+          
+          function handleMove(event) 
+          {
+              if ( !self.active ) return;
+      
+              // if this is a touch event, make sure it is the right one
+              // also handle multiple simultaneous touchmove events
+              let touchmoveId = null;
+              if (event.changedTouches)
+              {
+                for (let i = 0; i < event.changedTouches.length; i++)
+                {
+                  if (self.touchId == event.changedTouches[i].identifier)
+                  {
+                    touchmoveId = i;
+                    event.clientX = event.changedTouches[i].clientX;
+                    event.clientY = event.changedTouches[i].clientY;
+                  }
+                }
+      
+                if (touchmoveId == null) return;
+              }
+      
+              const xDiff = event.clientX - self.dragStart.x;
+              const yDiff = event.clientY - self.dragStart.y;
+              const angle = Math.atan2(yDiff, xDiff);
+            const distance = Math.min(maxDistance, Math.hypot(xDiff, yDiff));
+            const xPosition = distance * Math.cos(angle);
+            const yPosition = distance * Math.sin(angle);
+      
+            // move stick image to new position
+              stick.style.transform = `translate3d(${xPosition}px, ${yPosition}px, 0px)`;
+      
+            // deadzone adjustment
+            const distance2 = (distance < deadzone) ? 0 : maxDistance / (maxDistance - deadzone) * (distance - deadzone);
+            const xPosition2 = distance2 * Math.cos(angle);
+            const yPosition2 = distance2 * Math.sin(angle);
+            const xPercent = parseFloat((xPosition2 / maxDistance).toFixed(4));
+            const yPercent = parseFloat((yPosition2 / maxDistance).toFixed(4));
+              
+            self.value = { x: xPercent, y: yPercent };
+            //新增: 傳送移動指令給 piCar
+            handleStick(`/stick?x=${xPercent}&y=${yPercent}`);
+          }
+      
+          function handleUp(event) 
+          {
+              if ( !self.active ) return;
+      
+              // if this is a touch event, make sure it is the right one
+              if (event.changedTouches && self.touchId != event.changedTouches[0].identifier) return;
+      
+              // transition the joystick position back to center
+              stick.style.transition = '.2s';
+              stick.style.transform = `translate3d(0px, 0px, 0px)`;
+      
+              // reset everything
+              self.value = { x: 0, y: 0 };
+              self.touchId = null;
+              self.active = false;
+              // 新增: 使piCar停止
+              handleStick('/stick?x=0&y=0');
+          }
+      
+          stick.addEventListener('mousedown', handleDown);
+          stick.addEventListener('touchstart', handleDown);
+          document.addEventListener('mousemove', handleMove, {passive: false});
+          document.addEventListener('touchmove', handleMove, {passive: false});
+          document.addEventListener('mouseup', handleUp);
+          document.addEventListener('touchend', handleUp);
+        }
+      }
+      
+      let xhttp = new XMLHttpRequest();
+      let joystick = new JoystickController("stick", 64, 8);
+      
+      function handleStick(stickRoute){
+        xhttp.open('GET',stickRoute,true);
+        xhttp.send();
+      };
+      
+      xhttp.onload = ()=>{
+        if (xhttp.status == 200) {
+          document.querySelector('.panel_info').textContent = xhttp.responseText;
+        }
+      }
+
+      function update(){
+        // document.getElementById("status").innerText = "Joystick : " + JSON.stringify(joystick.value);
+        let stickRoute = "/stick?x=" + joystick.value.x + "&y=" + joystick.value.y;
+        document.querySelector('.panel_info').textContent = stickRoute;
+      }
+      
+      function loop(){
+        requestAnimationFrame(loop);
+        // update();
+      }
+      
+      loop();
+    </script>
+</body>
+</html>

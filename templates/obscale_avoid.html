@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obscale Avoiding</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="  crossorigin="anonymous"/> -->
+    <link rel="stylesheet" href="../static/css/controller.css" >
+    
+    
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Smart Vehicle</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="/">搖桿操控</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="/avoid">自動避障</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link " href="/navigate">自走導航</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/confpage">車輛設定</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/model">影像分類</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/admin">影像管理</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="panel_body" >
+      <div class="panel_container">
+        <div class="mt-5 panel_header ">自動避障</div>
+        <div class="mt-2 panel_info "></div>
+        <div class="d-flex flex-row justify-content-center align-items-center">
+          <div class="monitor ">
+            <img src="{{ url_for('video_feed') }}">
+          </div>  
+        </div>
+        <div class="wheel position-relative d-flex flex-row justify-content-center align-items-center">
+          <div class="circle ok-outer position-absolute"></div>
+          <div class="circle ok-inner position-absolute">
+            <b id="setAvoid" style="color: rgb(46, 46, 46);cursor: pointer;">ON</b>
+          </div>
+          <i class="fas fa-caret-right position-absolute control-icon right" ontouchstart="handlePath('/path?go=right')" onmousedown="handlePath('/path?go=right')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon bottom" ontouchstart="handlePath('/path?go=back')" onmousedown="handlePath('/path?go=back')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon left" ontouchstart="handlePath('/path?go=left')" onmousedown="handlePath('/path?go=left')"></i>
+          <i class="fas fa-caret-right position-absolute control-icon top" ontouchstart="handlePath('/path?go=forward')" onmousedown="handlePath('/path?go=forward')"></i>
+        </div>
+      </div>
+    </div>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="../static/js/all.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+    <script>
+      let xhttp = new XMLHttpRequest();
+      
+      xhttp.onload = ()=>{
+        if (xhttp.status == 200) {
+          document.querySelector('.panel_info').textContent = xhttp.responseText;
+        }};
+
+      function handlePath(route){
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      function handleAvoid(route){
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      let avoidStatus = false;
+      let setAvoid = document.getElementById("setAvoid");
+      // console.log(setAvoid.textContent);
+      const controlIcons = Array.from(document.getElementsByClassName("control-icon"));
+      // console.log(controlIcons);
+      setAvoid.addEventListener("click",(e)=>{
+        if (!avoidStatus){
+          setAvoid.textContent = "OFF";
+          setAvoid.style.color = "rgb(255,0,0)"
+          controlIcons.forEach(element => {
+            element.style.display = "none"
+          })
+          document.querySelector('.panel_info').textContent = '避障: ON';    
+          // 因python的同步特性，上列程式顯示的訊息直接由前端界面提供（見 piCar.py 第184行）
+        }else{
+          setAvoid.textContent = "ON";
+          setAvoid.style.color = "rgb(46,46,46)"
+          controlIcons.forEach(element => {
+            element.style.display = "inline"
+          })
+        }
+        avoidStatus = (!avoidStatus);
+        handleAvoid("/obscale?avoid=" + avoidStatus);
+      });
+      
+      controlIcons.forEach(element => {
+        element.addEventListener("mousedown",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("mouseup",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+          handlePath('/path?go=stop');
+        });
+        element.addEventListener("touchstart",(e)=>{
+          e.target.style.color="rgb(255,0,0)";
+        });
+        element.addEventListener("touchend",(e)=>{
+          e.preventDefault();
+          e.target.style.color="rgb(46,46,46)";
+          handlePath('/path?go=stop')
+        });
+      });  
+    </script>
+</body>
+</html>

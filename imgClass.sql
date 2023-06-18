@@ -1,0 +1,11 @@
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS `class` (
+	`classname`	TEXT NOT NULL UNIQUE,
+	PRIMARY KEY(`classname`)
+);
+CREATE TABLE IF NOT EXISTS `img` (
+	`imgname`	TEXT NOT NULL UNIQUE,
+	`classname`	TEXT,
+	FOREIGN KEY(`classname`) REFERENCES `class`(`classname`) ON DELETE CASCADE
+);
+COMMIT;

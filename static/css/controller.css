@@ -1,0 +1,113 @@
+div.panel_body {
+    display: flex;
+    justify-content: center;
+    /* align-items: center; */
+    padding-top: 5%;
+    height: 100vh;
+}
+div.panel_container {
+    background: rgb(206, 238, 250);
+    border-radius: 30px;
+    height: 680px;
+    width: 350px;
+    position: relative;
+}
+div.panel_header {
+    font-size: 25px;
+    text-align: center;
+}
+i.fa-edit {
+    color: rgb(150, 150, 150);
+    cursor: pointer;
+}
+#inputClass {
+    width: 100px;
+    display:none ;
+}
+div.panel_info {
+    height: 25px;
+    font-size: 20px;
+    text-align: center;
+}
+
+div.monitor {
+    background: rgb(159, 159, 159);
+    border-radius: 5px;
+    height: 240px;
+    width: 320px;
+    overflow: auto;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: #faf8f8;
+}
+thead {
+    position: sticky;
+    width: 100%;
+    top: 0;
+}
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+th {
+    background-color: #c2c1c1;
+}
+tr.orange {
+    background-color: orange;
+}
+i.fa-folder{
+    margin: 0 10px;
+}
+
+div.wheel {
+    margin-top: 100px;
+    padding-top: 50px;
+}
+
+i.control-icon, i.fa-camera, i.fa-trash{
+    font-size: 36px;
+    color: rgb(46, 46, 46);
+    cursor: pointer;
+}
+.noDisplay {
+    display: none;
+}
+
+div.circle {
+    border: 1px solid #c2c1c1;
+    border-radius: 50%;
+}
+
+div.ok-inner {
+    padding: 30px;
+    /* top:65px; */
+}
+
+div.ok-outer {
+    padding: 100px;
+    /* top:5px; */
+}
+
+i.right {
+    transform: translate(70px);
+}
+
+i.bottom {
+    transform: rotate(90deg) translate(70px);
+}
+
+i.left {
+    transform: rotate(180deg) translate(70px);
+}
+
+i.top {
+    transform: rotate(270deg) translate(70px);
+}
+
+#camera {
+    display: none;
+}

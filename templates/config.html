@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle configuration</title>
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="  crossorigin="anonymous"/> -->
+    <link rel="stylesheet" href="../static/css/controller.css" >
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Smart Vehicle</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="/">搖桿操控</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/avoid">自動避障</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link " href="/navigate">自走導航</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="/confpage">車輛設定</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link " href="/model">影像分類</a>
+              </li>
+              <li class="nav-item ">
+                <a class="nav-link" href="/admin">影像管理</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+    </nav>
+    <div class="panel_body" >
+        <div class="panel_container">
+            <div class="mt-5 panel_header ">車輛設定</div>
+            <div class="pt-5 px-4 justify-content-center align-items-center">
+                <label for="speedRange" class="form-label">最大車輪轉速(50~100) </label>
+                <input type="range" class="form-range" value="50" min="50" max="100" step="10" id="speedRange">
+                <p>轉速: <output id="speedValue"></output></p>
+            </div>
+            <div class="pt-5 px-4 justify-content-center align-items-center">
+                <label for="distanceRange" class="form-label">避障距離(20 ~ 50cm) </label>
+                <input type="range" class="form-range" value="25" min="20" max="50" step="5" id="distanceRange">
+                <p>距離： <output id="distanceValue"></output>cm</p>
+            </div>
+            <!-- <div class="pt-5 px-4 justify-content-center align-items-center">
+                <label for="ratioRange" class="form-label">Wheel speed ratio when turning(0 ~ 0.9) </label>
+                <input type="range" class="form-range" value="0.5" min="0.1" max="0.9" step="0.1" id="ratioRange">
+                <p>Ratio: <output id="ratioValue"></output></p>
+            </div> -->
+        </div>
+    </div>
+    <script src="../static/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="../static/js/all.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+    <script>
+      let xhttp = new XMLHttpRequest();
+
+      const speedRange = document.querySelector("#speedRange");
+      const speedValue = document.querySelector("#speedValue");
+
+      const distanceRange = document.querySelector("#distanceRange");
+      const distanceValue = document.querySelector("#distanceValue");
+      
+      xhttp.onload = ()=>{
+        if ( xhttp.status == 200) {
+          let resJson = JSON.parse(xhttp.responseText);
+          speedRange.value = resJson.Speed;
+          speedValue.textContent = resJson.Speed;
+          distanceRange.value = resJson.Distance;
+          distanceValue.textContent = resJson.Distance;
+        }
+      }
+      
+      function handleConfig(route){
+        // console.log(route);
+        xhttp.open('GET',route,true);
+        xhttp.send();
+      }
+
+      window.onload = ()=>{
+        handleConfig('/config');
+      }
+
+      speedRange.addEventListener("input", (event) => {
+        handleConfig('/config?speed=' + event.target.value);
+      })
+      
+      distanceRange.addEventListener("input", (event) => {
+        handleConfig('/config?distance=' + event.target.value);
+      })
+
+  </script>
+</body>
+</html>
